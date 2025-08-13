@@ -166,7 +166,8 @@ bool SimpleEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* SimpleEQAudioProcessor::createEditor()
 {
-    return new SimpleEQAudioProcessorEditor (*this);
+    //return new SimpleEQAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -181,6 +182,33 @@ void SimpleEQAudioProcessor::setStateInformation (const void* data, int sizeInBy
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout SimpleEQAudioProcessor::createParameterLayout() {
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    //low cut parameter
+    layout.add(std::make_unique<juce::AudioParameterFloat>("lowCutFreq", "LowCut Freq", 20.f, 20000.f,20.f));
+    //high cut parameter
+    layout.add(std::make_unique<juce::AudioParameterFloat>("highCutFreq", "HighCut Freq", 20.f, 20000.f, 20000.f));
+    //peak frequency
+    layout.add(std::make_unique<juce::AudioParameterFloat>("PeakFreq", "Peak Freq", 20.f, 20000.f, 750.f));
+    //peak gain
+    layout.add(std::make_unique<juce::AudioParameterFloat>("PeakGain", "Peak Gain", juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),0.0f));
+    //bell spread
+    layout.add(std::make_unique<juce::AudioParameterFloat>("PeakQuality", "Peak Quality", juce::NormalisableRange<float>(0.1f, 10.f, 0.05f, 1.f), 1.f));
+
+    //slope choices
+    juce::StringArray slopeChoices;
+    for (int i = 0;i < 4;i++) {
+        juce::String choice;
+        choice << (12 + i * 12) << "db/Oct";
+        slopeChoices.add(choice);
+    }
+    layout.add(std::make_unique<juce::AudioParameterChoice>("LowCutSlope", "LowCut Slope", slopeChoices, 0));
+    layout.add(std::make_unique<juce::AudioParameterChoice>("HighCutSlope", "HighCut Slope", slopeChoices, 0));
+
+    return layout;
 }
 
 //==============================================================================
