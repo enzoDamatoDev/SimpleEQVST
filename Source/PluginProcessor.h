@@ -10,6 +10,20 @@
 
 #include <JuceHeader.h>
 
+enum Slope {
+    Slope_12,
+    Slope_24,
+    Slope_36,
+    Slope_48
+};
+struct ChainSettings {
+    float peakFreq{ 0 }, peakGainDecibels{ 0 }, peakQuality{ 1.f };
+    float lowCutFreq{ 0 }, highCutFreq{ 0 };
+    Slope lowCutSlope{ Slope::Slope_12 }, highCutSlope{ Slope::Slope_12 };
+};
+
+ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
+
 //==============================================================================
 /**
 */
@@ -64,6 +78,56 @@ private:
 
     MonoChain leftChain, rightChain;
      
+
+    enum ChainPositions {
+        LowCut,
+        Peak,
+        HighCut
+    };
+    void updatePeakFilter(const ChainSettings& chainSettings);
+    using Coefficients = Filter::CoefficientsPtr;
+    static void updateCoefficients(Coefficients& old, const Coefficients& replacments);
+
+    template<typename ChainType, typename CoefficientType>
+    void updateCutFilter(ChainType& Cut, const CoefficientType& cutCoefficients, const Slope& slope) {
+
+        Cut.template setBypassed<0>(true);
+        Cut.template setBypassed<1>(true);
+        Cut.template setBypassed<2>(true);
+        Cut.template setBypassed<3>(true);
+
+        switch (slope) {
+            case Slope_12:
+                *Cut.template get<0>().coefficients = *cutCoefficients[0];
+                Cut.template setBypassed<0>(false);
+                break;
+            case Slope_24:
+                *Cut.template get<0>().coefficients = *cutCoefficients[0];
+                Cut.template setBypassed<0>(false);
+                *Cut.template get<1>().coefficients = *cutCoefficients[1];
+                Cut.template setBypassed<1>(false);
+                break;
+            case Slope_36:
+                *Cut.template get<0>().coefficients = *cutCoefficients[0];
+                Cut.template setBypassed<0>(false);
+                *Cut.template get<1>().coefficients = *cutCoefficients[1];
+                Cut.template setBypassed<1>(false);
+                *Cut.template get<2>().coefficients = *cutCoefficients[2];
+                Cut.template setBypassed<2>(false);
+                break;
+            case Slope_48:
+                *Cut.template get<0>().coefficients = *cutCoefficients[0];
+                Cut.template setBypassed<0>(false);
+                *Cut.template get<1>().coefficients = *cutCoefficients[1];
+                Cut.template setBypassed<1>(false);
+                *Cut.template get<2>().coefficients = *cutCoefficients[2];
+                Cut.template setBypassed<2>(false);
+                *Cut.template get<3>().coefficients = *cutCoefficients[3];
+                Cut.template setBypassed<3>(false);
+                break;
+        }
+    }
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
 };
